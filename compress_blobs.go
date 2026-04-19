@@ -1,25 +1,32 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/klauspost/compress/zstd"
-	_ "modernc.org/sqlite"
+	"kbfirmware/db"
 )
 
-func main() {
-	dbPath := flag.String("db", "kbfirmware.db", "path to SQLite database")
-	limit := flag.Int("limit", 0, "only migrate this many files (0 = all)")
-	flag.Parse()
+func runCompressBlobs(args []string) {
+	fs := flag.NewFlagSet("compress-blobs", flag.ExitOnError)
+	limit := fs.Int("limit", 0, "only migrate this many files (0 = all)")
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: kbfirmware compress-blobs [-limit N]\n\n")
+		fmt.Fprintf(os.Stderr, "Compresses uncompressed firmware BLOBs in-place using zstd.\n")
+		fmt.Fprintf(os.Stderr, "Reads DB_PATH from environment (default: kbfirmware.db).\n\n")
+		fs.PrintDefaults()
+	}
+	fs.Parse(args)
 
-	db, err := sql.Open("sqlite", fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)", *dbPath))
+	dbPath := getenv("DB_PATH", "kbfirmware.db")
+	database, err := db.Open(dbPath)
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 	}
-	defer db.Close()
+	defer database.Close()
 
 	encoder, _ := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
 
@@ -27,7 +34,7 @@ func main() {
 	if *limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d", *limit)
 	}
-	rows, err := db.Query(query)
+	rows, err := database.Query(query)
 	if err != nil {
 		log.Fatalf("query: %v", err)
 	}
@@ -63,8 +70,7 @@ func main() {
 		compressed := encoder.EncodeAll(f.data, nil)
 		after := int64(len(compressed))
 
-		_, err := db.Exec(`UPDATE firmware_file SET data = ?, compressed = 1 WHERE id = ?`, compressed, f.id)
-		if err != nil {
+		if _, err := database.Exec(`UPDATE firmware_file SET data = ?, compressed = 1 WHERE id = ?`, compressed, f.id); err != nil {
 			log.Fatalf("update file %d (%s): %v", f.id, f.filename, err)
 		}
 

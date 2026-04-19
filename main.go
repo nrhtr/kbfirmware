@@ -25,6 +25,17 @@ import (
 var embeddedFS embed.FS
 
 func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "compress-blobs":
+			runCompressBlobs(os.Args[2:])
+			return
+		default:
+			fmt.Fprintf(os.Stderr, "unknown subcommand %q\n\nSubcommands:\n  compress-blobs  compress uncompressed firmware BLOBs in-place\n", os.Args[1])
+			os.Exit(1)
+		}
+	}
+
 	// Read environment variables
 	dbPath := getenv("DB_PATH", "kbfirmware.db")
 	listenAddr := getenv("LISTEN_ADDR", ":8080")
