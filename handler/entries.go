@@ -23,7 +23,7 @@ func (h *EntriesJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	etag := fmt.Sprintf(`"v%d"`, version)
 	w.Header().Set("ETag", etag)
-	w.Header().Set("Cache-Control", "public, max-age=0, stale-while-revalidate=60")
+	w.Header().Set("Cache-Control", "public, max-age=300, stale-while-revalidate=30")
 
 	if r.Header.Get("If-None-Match") == etag {
 		w.WriteHeader(http.StatusNotModified)

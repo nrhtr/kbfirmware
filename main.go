@@ -42,12 +42,8 @@ func main() {
 	adminToken := os.Getenv("ADMIN_TOKEN")
 
 	emailCfg := email.Config{
-		Host: os.Getenv("SMTP_HOST"),
-		Port: os.Getenv("SMTP_PORT"),
-		User: os.Getenv("SMTP_USER"),
-		Pass: os.Getenv("SMTP_PASS"),
-		From: os.Getenv("SMTP_FROM"),
-		To:   os.Getenv("SMTP_TO"),
+		From: getenv("EMAIL_FROM", "kbfirmware@jenga.xyz"),
+		To:   getenv("EMAIL_TO", "jeremy@jenga.xyz"),
 	}
 
 	// Open database

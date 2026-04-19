@@ -3,19 +3,15 @@ package email
 import (
 	"fmt"
 	"log"
-	"net/smtp"
+	"os/exec"
 	"strings"
 	"time"
 
 	"kbfirmware/db"
 )
 
-// Config holds SMTP configuration for sending digest emails.
+// Config holds configuration for sending digest emails via sendmail.
 type Config struct {
-	Host string
-	Port string
-	User string
-	Pass string
 	From string
 	To   string
 }
@@ -37,12 +33,11 @@ func StartDailyDigest(cfg Config, database *db.DB) {
 			flags, err := database.OpenFlags()
 			if err != nil {
 				log.Printf("email: failed to fetch open flags: %v", err)
-				// Still loop — try again tomorrow
 			} else if len(flags) == 0 {
 				log.Printf("email: no pending flags, skipping digest")
 			} else {
 				if cfg.To == "" {
-					log.Printf("email: SMTP_TO is not configured, skipping digest (have %d flags)", len(flags))
+					log.Printf("email: EMAIL_TO is not configured, skipping digest (have %d flags)", len(flags))
 				} else {
 					if err := SendDigest(cfg, flags); err != nil {
 						log.Printf("email: failed to send digest: %v", err)
@@ -56,7 +51,6 @@ func StartDailyDigest(cfg Config, database *db.DB) {
 }
 
 // nextDigestTime computes the next 6:30pm Melbourne time.
-// If the current Melbourne time is before 6:30pm today, it uses today; otherwise tomorrow.
 func nextDigestTime(loc *time.Location) time.Time {
 	now := time.Now().In(loc)
 	target := time.Date(now.Year(), now.Month(), now.Day(), 18, 30, 0, 0, loc)
@@ -66,10 +60,10 @@ func nextDigestTime(loc *time.Location) time.Time {
 	return target
 }
 
-// SendDigest composes and sends a plain-text digest email listing pending flags.
+// SendDigest composes and sends a plain-text digest email via sendmail.
 func SendDigest(cfg Config, flags []db.Flag) error {
 	if cfg.To == "" {
-		return fmt.Errorf("SMTP_TO is not configured")
+		return fmt.Errorf("EMAIL_TO is not configured")
 	}
 
 	subject := fmt.Sprintf("kbfirmware: %d flag(s) pending review", len(flags))
@@ -88,24 +82,17 @@ func SendDigest(cfg Config, flags []db.Flag) error {
 		sb.WriteString("\n")
 	}
 
-	body := sb.String()
+	msg := "From: " + cfg.From + "\n" +
+		"To: " + cfg.To + "\n" +
+		"Subject: " + subject + "\n" +
+		"Content-Type: text/plain; charset=UTF-8\n" +
+		"\n" +
+		sb.String()
 
-	msg := "From: " + cfg.From + "\r\n" +
-		"To: " + cfg.To + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"Content-Type: text/plain; charset=UTF-8\r\n" +
-		"\r\n" +
-		body
-
-	addr := cfg.Host + ":" + cfg.Port
-	if cfg.Port == "" {
-		addr = cfg.Host + ":25"
+	cmd := exec.Command("sendmail", cfg.To)
+	cmd.Stdin = strings.NewReader(msg)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("sendmail: %w (output: %s)", err, strings.TrimSpace(string(out)))
 	}
-
-	var auth smtp.Auth
-	if cfg.User != "" && cfg.Pass != "" {
-		auth = smtp.PlainAuth("", cfg.User, cfg.Pass, cfg.Host)
-	}
-
-	return smtp.SendMail(addr, auth, cfg.From, []string{cfg.To}, []byte(msg))
+	return nil
 }
