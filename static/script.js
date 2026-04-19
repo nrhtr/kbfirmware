@@ -126,7 +126,7 @@ document.addEventListener('click', e => {
   navigator.clipboard.writeText(hash).then(() => {
     const label = btn.querySelector('.hash-label');
     const prev = label.textContent;
-    label.textContent = 'Copied!';
+    label.textContent = '✓ Copied';
     btn.classList.add('hash-copied');
     setTimeout(() => { label.textContent = prev; btn.classList.remove('hash-copied'); }, 1500);
   });
