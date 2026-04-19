@@ -29,7 +29,7 @@
 
           # Update this hash after any change to go.mod / go.sum:
           #   nix build 2>&1 | grep "got:" | awk '{print $2}'
-          vendorHash = "sha256-vlGmqYWcL5wC9c0JxzOjzCmSR+ju/lxscx2KBe9N2Fo=";
+          vendorHash = "sha256-U9lvhS932JS52QvTXBJRXdoRNPYdP0/DxqNVIdxuhVU=";
 
           # modernc.org/sqlite is pure Go — no CGo needed.
           env.CGO_ENABLED = "0";
