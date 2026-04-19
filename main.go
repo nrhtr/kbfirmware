@@ -127,6 +127,7 @@ func main() {
 	r.Get("/", (&handler.IndexHandler{Tmpl: tmpl}).ServeHTTP)
 	r.Get("/api/entries.json", (&handler.EntriesJSONHandler{DB: database}).ServeHTTP)
 	r.Get("/file/{fileID}", (&handler.DownloadHandler{DB: database}).ServeHTTP)
+	r.Get("/file/{fileID}/{sha256}", (&handler.DownloadHandler{DB: database}).ServeHTTP)
 	r.Post("/flag/{entryID}", (&handler.FlagHandler{DB: database}).ServeHTTP)
 
 	// Admin sub-router

@@ -27,7 +27,7 @@ function renderEntry(e) {
   const tagsHtml = tags ? `<div class="tags">${tags}</div>` : '';
   const files = (e.files || []).map(f => `
     <div class="file-row">
-      <a class="file-link" href="/file/${f.id}" download="${esc(f.filename)}">
+      <a class="file-link" href="/file/${f.id}/${f.sha256}" download="${esc(f.filename)}">
         <span class="file-tag">${esc(f.file_tag)}</span><span class="file-sep"> / </span><span class="file-name">${esc(f.filename)}</span>
       </a>
       <button class="hash-btn" data-hash="${esc(f.sha256)}" title="Click to copy SHA256"
