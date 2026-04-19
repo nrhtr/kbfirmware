@@ -15,9 +15,8 @@ type Entry struct {
 
 // File is the JSON shape for a firmware file within a search Entry.
 type File struct {
-	ID        int64  `json:"id"`
-	FileTag   string `json:"file_tag"`
-	Filename  string `json:"filename"`
-	SHA256    string `json:"sha256"`
-	SizeBytes int64  `json:"size_bytes"`
+	ID      int64  `json:"id"`
+	FileTag string `json:"file_tag"`
+	Filename string `json:"filename"`
+	SHA256  string `json:"sha256"`
 }

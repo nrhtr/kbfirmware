@@ -52,11 +52,10 @@ func (h *EntriesJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, f := range e.Files {
 			se.Files = append(se.Files, search.File{
-				ID:        f.ID,
-				FileTag:   f.FileTag,
-				Filename:  f.Filename,
-				SHA256:    f.SHA256,
-				SizeBytes: f.SizeBytes,
+				ID:       f.ID,
+				FileTag:  f.FileTag,
+				Filename: f.Filename,
+				SHA256:   f.SHA256,
 			})
 		}
 		payload = append(payload, se)
