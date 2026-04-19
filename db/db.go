@@ -6,8 +6,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/pressly/goose/v3"
 	_ "modernc.org/sqlite"
+)
+
+var (
+	zstdEncoder, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+	zstdDecoder, _ = zstd.NewReader(nil)
 )
 
 //go:embed migrations/*.sql
@@ -439,11 +445,13 @@ func (db *DB) DeleteEntry(id int64) error {
 	return nil
 }
 
-// InsertFile inserts a firmware file BLOB.
+// InsertFile compresses and inserts a firmware file BLOB.
+// sha256 and sizeBytes must reflect the original uncompressed data.
 func (db *DB) InsertFile(entryID int64, fileTag, filename, mimeType, sha256 string, sizeBytes int64, data []byte) (int64, error) {
+	compressed := zstdEncoder.EncodeAll(data, nil)
 	res, err := db.Exec(
-		`INSERT INTO firmware_file (firmware_entry_id, file_tag, filename, mime_type, sha256, size_bytes, data) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		entryID, fileTag, filename, mimeType, sha256, sizeBytes, data,
+		`INSERT INTO firmware_file (firmware_entry_id, file_tag, filename, mime_type, sha256, size_bytes, data, compressed) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+		entryID, fileTag, filename, mimeType, sha256, sizeBytes, compressed,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("insert file: %w", err)
@@ -457,14 +465,25 @@ func (db *DB) InsertFile(entryID int64, fileTag, filename, mimeType, sha256 stri
 }
 
 // GetFileData returns the file data and metadata for a given file ID.
+// Data is decompressed transparently if the compressed flag is set.
 func (db *DB) GetFileData(fileID int64) (filename, mimeType string, data []byte, err error) {
+	var compressed int
 	err = db.QueryRow(
-		`SELECT filename, mime_type, data FROM firmware_file WHERE id=?`, fileID,
-	).Scan(&filename, &mimeType, &data)
+		`SELECT filename, mime_type, data, compressed FROM firmware_file WHERE id=?`, fileID,
+	).Scan(&filename, &mimeType, &data, &compressed)
 	if err == sql.ErrNoRows {
 		return "", "", nil, fmt.Errorf("file not found")
 	}
-	return filename, mimeType, data, err
+	if err != nil {
+		return "", "", nil, err
+	}
+	if compressed != 0 {
+		data, err = zstdDecoder.DecodeAll(data, nil)
+		if err != nil {
+			return "", "", nil, fmt.Errorf("decompress file: %w", err)
+		}
+	}
+	return filename, mimeType, data, nil
 }
 
 // DeleteFile deletes a firmware file by ID.
