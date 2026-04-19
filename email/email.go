@@ -10,6 +10,11 @@ import (
 	"kbfirmware/db"
 )
 
+// sendmailBin is the path to the sendmail binary. Override at build time with:
+//
+//	-X kbfirmware/email.sendmailBin=/path/to/sendmail
+var sendmailBin = "sendmail"
+
 // Config holds configuration for sending digest emails via sendmail.
 type Config struct {
 	From string
@@ -89,7 +94,7 @@ func SendDigest(cfg Config, flags []db.Flag) error {
 		"\n" +
 		sb.String()
 
-	cmd := exec.Command("sendmail", cfg.To)
+	cmd := exec.Command(sendmailBin, cfg.To)
 	cmd.Stdin = strings.NewReader(msg)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("sendmail: %w (output: %s)", err, strings.TrimSpace(string(out)))
