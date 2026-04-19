@@ -88,7 +88,7 @@ function applyFilter() {
 }
 
 // Fetch entries and render
-fetch('/api/entries.json')
+fetch('/api/entries.json', { cache: 'default' })
   .then(r => {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
