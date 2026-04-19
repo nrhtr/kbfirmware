@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Upload Firmware — kbfirmware Admin</title>
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <span class="admin-title">kbfirmware Admin</span>
+      <nav class="admin-nav">
+        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}">Manage</a>
+        <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}" class="active">Upload</a>
+        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}">Flags</a>
+        <a href="/">← Public Site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <h1>Upload Firmware</h1>
+
+    {{if .Error}}
+    <div class="alert alert-error">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="/admin/upload{{if .Token}}?token={{.Token}}{{end}}" enctype="multipart/form-data" class="upload-form">
+
+      <!-- PCB Section -->
+      <section class="form-section">
+        <h2>PCB</h2>
+        <div class="form-row radio-row">
+          <label class="radio-label">
+            <input type="radio" name="pcb_choice" value="existing" id="pcb-existing" checked>
+            Use existing PCB
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="pcb_choice" value="new" id="pcb-new">
+            Add new PCB
+          </label>
+        </div>
+
+        <div id="pcb-existing-section">
+          <div class="form-group">
+            <label for="pcb_id_select">Select PCB</label>
+            <select name="pcb_id" id="pcb_id_select">
+              {{range .PCBs}}
+              <option value="{{.ID}}">{{.Name}}{{if .Revision}} — {{.Revision}}{{end}}{{if .Designer}} ({{.Designer}}){{end}}</option>
+              {{end}}
+              {{if eq (len .PCBs) 0}}
+              <option value="" disabled selected>No PCBs yet — select "Add new PCB" above</option>
+              {{end}}
+            </select>
+          </div>
+        </div>
+
+        <div id="pcb-new-section" class="hidden">
+          <div class="form-group">
+            <label for="pcb_name">PCB Name <span class="required">*</span></label>
+            <input type="text" name="pcb_name" id="pcb_name" placeholder="e.g. Salvation65">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pcb_revision">Revision</label>
+              <input type="text" name="pcb_revision" id="pcb_revision" placeholder="e.g. v1.2">
+            </div>
+            <div class="form-group">
+              <label for="pcb_designer">Designer</label>
+              <input type="text" name="pcb_designer" id="pcb_designer" placeholder="e.g. ai03">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="pcb_notes">PCB Notes</label>
+            <textarea name="pcb_notes" id="pcb_notes" rows="2" placeholder="Optional notes about this PCB"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Firmware Section -->
+      <section class="form-section">
+        <h2>Firmware Details</h2>
+        <div class="form-group">
+          <label for="firmware_name">Firmware Name <span class="required">*</span></label>
+          <input type="text" name="firmware_name" id="firmware_name" required placeholder="e.g. QMK default, Vial">
+        </div>
+        <div class="form-group">
+          <label for="source_url">Source URL</label>
+          <input type="url" name="source_url" id="source_url" placeholder="https://github.com/…">
+        </div>
+        <div class="form-group">
+          <label for="firmware_notes">Notes</label>
+          <textarea name="firmware_notes" id="firmware_notes" rows="3" placeholder="Optional notes, build instructions, version info…"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="tags">Tags</label>
+          <input type="text" name="tags" id="tags" list="tag-list" placeholder="qmk, vial, via (comma-separated)" autocomplete="off">
+          <datalist id="tag-list">
+            {{range .Tags}}
+            <option value="{{.}}">
+            {{end}}
+          </datalist>
+          <small class="form-hint">Comma-separated. e.g. <code>qmk, vial, via</code></small>
+        </div>
+      </section>
+
+      <!-- Files Section -->
+      <section class="form-section">
+        <h2>Files</h2>
+        <p class="form-hint">Upload up to 5 files. SHA256 is computed automatically on upload.</p>
+        <div class="files-grid">
+          {{range $i := iter 5}}
+          <div class="file-row">
+            <span class="file-row-num">{{add $i 1}}</span>
+            <input type="text" name="file_tag_{{$i}}" placeholder="Tag (e.g. firmware, vial_json, readme)" class="file-tag-input">
+            <input type="file" name="file_{{$i}}" class="file-input">
+          </div>
+          {{end}}
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Upload Firmware</button>
+        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    (function() {
+      var existingRadio = document.getElementById('pcb-existing');
+      var newRadio = document.getElementById('pcb-new');
+      var existingSection = document.getElementById('pcb-existing-section');
+      var newSection = document.getElementById('pcb-new-section');
+      var pcbIdSelect = document.getElementById('pcb_id_select');
+
+      function update() {
+        var isNew = newRadio.checked;
+        existingSection.classList.toggle('hidden', isNew);
+        newSection.classList.toggle('hidden', !isNew);
+        // When "new" is selected, disable the select so it doesn't submit
+        pcbIdSelect.disabled = isNew;
+        // When "new" is selected, the form value for pcb_id should be "new"
+        // We handle this in the POST handler by checking form value
+        if (isNew) {
+          pcbIdSelect.name = '';
+          // We need a hidden field with value "new" — inject it
+          var existing = document.getElementById('pcb_id_hidden_new');
+          if (!existing) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'pcb_id';
+            inp.value = 'new';
+            inp.id = 'pcb_id_hidden_new';
+            document.querySelector('.upload-form').appendChild(inp);
+          }
+        } else {
+          pcbIdSelect.name = 'pcb_id';
+          var hidden = document.getElementById('pcb_id_hidden_new');
+          if (hidden) hidden.remove();
+        }
+      }
+
+      existingRadio.addEventListener('change', update);
+      newRadio.addEventListener('change', update);
+      update();
+    })();
+  </script>
+</body>
+</html>

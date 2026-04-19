@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <style>
+    .s { stroke: #222; }
+    @media (prefers-color-scheme: dark) { .s { stroke: #ddd; } }
+  </style>
+  <rect class="s" x="1" y="5" width="22" height="14" rx="2" stroke-width="1.5"/>
+  <rect class="s" x="4"  y="9" width="2" height="2" rx=".4" stroke-width="1.2"/>
+  <rect class="s" x="8"  y="9" width="2" height="2" rx=".4" stroke-width="1.2"/>
+  <rect class="s" x="12" y="9" width="2" height="2" rx=".4" stroke-width="1.2"/>
+  <rect class="s" x="16" y="9" width="2" height="2" rx=".4" stroke-width="1.2"/>
+  <rect class="s" x="4"  y="13" width="2" height="2" rx=".4" stroke-width="1.2"/>
+  <rect class="s" x="8"  y="13" width="8" height="2" rx=".4" stroke-width="1.2"/>
+  <rect class="s" x="18" y="13" width="2" height="2" rx=".4" stroke-width="1.2"/>
+</svg>

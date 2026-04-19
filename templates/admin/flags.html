@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Flags — kbfirmware Admin</title>
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <span class="admin-title">kbfirmware Admin</span>
+      <nav class="admin-nav">
+        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}">Manage</a>
+        <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload</a>
+        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}" class="active">Flags</a>
+        <a href="/">← Public Site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <h1>Open Flags <span class="badge">{{len .Flags}}</span></h1>
+
+    {{if .Flags}}
+    <div class="table-wrapper">
+      <table class="admin-table flags-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>PCB</th>
+            <th>Firmware</th>
+            <th>Reason</th>
+            <th>Reporter IP</th>
+            <th>Reported At</th>
+            <th>Resolve</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Flags}}
+          <tr>
+            <td class="td-id">#{{.ID}}</td>
+            <td>{{.PCBName}}</td>
+            <td>
+              {{.FirmwareName}}
+              <a href="/admin/entry/{{.FirmwareEntryID}}/edit{{if $.Token}}?token={{$.Token}}{{end}}" class="entry-link" title="View/edit this firmware entry">↗</a>
+            </td>
+            <td class="td-reason">{{if .Reason}}{{.Reason}}{{else}}<span class="muted">No reason given</span>{{end}}</td>
+            <td class="td-ip"><code>{{.ReporterIP}}</code></td>
+            <td class="td-time"><time>{{.CreatedAt}}</time></td>
+            <td class="td-resolve">
+              <form method="POST" action="/admin/flag/{{.ID}}/resolve{{if $.Token}}?token={{$.Token}}{{end}}" class="resolve-form">
+                <textarea name="notes" rows="2" placeholder="Resolution notes (optional)…" class="resolve-notes"></textarea>
+                <button type="submit" class="btn-sm btn-primary">Resolve</button>
+              </form>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state">
+      <p>No open flags. Everything looks good!</p>
+    </div>
+    {{end}}
+  </main>
+</body>
+</html>

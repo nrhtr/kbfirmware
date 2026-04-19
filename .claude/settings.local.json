@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(ADMIN_TOKEN=test timeout 3 go run . 2>&1 || true)",
+      "WebFetch(domain:caniusevia.com)",
+      "Bash(DB_PATH=kbfirmware.db go run *)",
+      "Bash(go get *)",
+      "Bash(ADMIN_TOKEN=test go run .)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)",
+      "Bash(kill %1)",
+      "Bash(nix build *)",
+      "Bash(git add *)"
+    ]
+  }
+}

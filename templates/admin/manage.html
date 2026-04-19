@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Manage Firmware — kbfirmware Admin</title>
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <span class="admin-title">kbfirmware Admin</span>
+      <nav class="admin-nav">
+        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}" class="active">Manage</a>
+        <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload</a>
+        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}">Flags</a>
+        <a href="/">← Public Site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-page-header">
+      <h1>Firmware Entries</h1>
+      <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}" class="btn-primary">+ Upload New</a>
+    </div>
+
+    {{if .Entries}}
+    <div class="admin-filter-bar">
+      <input type="search" id="manage-filter" placeholder="Filter by PCB, firmware name, designer…" autocomplete="off">
+      <span id="manage-count" class="muted"></span>
+    </div>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>PCB</th>
+            <th>Revision</th>
+            <th>Designer</th>
+            <th>Firmware Name</th>
+            <th>Tags</th>
+            <th>Files</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Entries}}
+          <tr>
+            <td class="td-pcb">{{.PCBName}}</td>
+            <td class="td-revision">{{.PCBRevision}}</td>
+            <td class="td-designer">{{.PCBDesigner}}</td>
+            <td class="td-firmware">{{.FirmwareName}}</td>
+            <td class="td-tags">
+              {{range .Tags}}<span class="tag tag-sm">{{.}}</span>{{end}}
+            </td>
+            <td class="td-files">
+              {{if .Files}}
+              {{range .Files}}
+              <div class="file-item-row">
+                <a href="/file/{{.ID}}" class="file-dl-link" download="{{.Filename}}" title="SHA256: {{.SHA256}}">
+                  <span class="file-tag-label">{{.FileTag}}</span>: {{.Filename}}
+                </a>
+                <form method="POST" action="/admin/file/{{.ID}}/delete{{if $.Token}}?token={{$.Token}}{{end}}" class="inline-form" onsubmit="return confirm('Delete file {{.Filename}}?')">
+                  <button type="submit" class="btn-delete-sm" title="Delete this file">&times;</button>
+                </form>
+              </div>
+              {{end}}
+              {{else}}
+              <span class="muted">No files</span>
+              {{end}}
+            </td>
+            <td class="td-actions">
+              <div class="td-actions-inner">
+                <a href="/admin/entry/{{.ID}}/edit{{if $.Token}}?token={{$.Token}}{{end}}" class="btn-sm btn-secondary">Edit</a>
+                <form method="POST" action="/admin/entry/{{.ID}}/delete{{if $.Token}}?token={{$.Token}}{{end}}" class="inline-form" onsubmit="return confirm('Delete firmware entry for {{.PCBName}}? This cannot be undone.')">
+                  <button type="submit" class="btn-sm btn-danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state">
+      <p>No firmware entries yet. <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload the first one.</a></p>
+    </div>
+    {{end}}
+  </main>
+  <script>
+    const input = document.getElementById('manage-filter');
+    const countEl = document.getElementById('manage-count');
+    const rows = Array.from(document.querySelectorAll('.admin-table tbody tr'));
+    if (countEl) countEl.textContent = rows.length + ' entries';
+    let debounce;
+    input?.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        const q = input.value.trim().toLowerCase();
+        let visible = 0;
+        rows.forEach(row => {
+          const match = !q || row.textContent.toLowerCase().includes(q);
+          row.style.display = match ? '' : 'none';
+          if (match) visible++;
+        });
+        if (countEl) countEl.textContent = q ? visible + ' of ' + rows.length + ' entries' : rows.length + ' entries';
+      }, 120);
+    });
+  </script>
+</body>
+</html>

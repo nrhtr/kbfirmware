@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Edit Firmware — kbfirmware Admin</title>
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <span class="admin-title">kbfirmware Admin</span>
+      <nav class="admin-nav">
+        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}">Manage</a>
+        <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload</a>
+        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}">Flags</a>
+        <a href="/">← Public Site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <h1>Edit Firmware Entry</h1>
+    <p class="form-hint muted">To add more files, use the <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">upload form</a> to create a new entry. Files can only be deleted here, not added.</p>
+
+    {{if .Error}}
+    <div class="alert alert-error">{{.Error}}</div>
+    {{end}}
+
+    <form id="edit-form" method="POST" action="/admin/entry/{{.Entry.ID}}/edit{{if .Token}}?token={{.Token}}{{end}}" class="upload-form">
+
+      <!-- PCB Section -->
+      <section class="form-section">
+        <h2>PCB</h2>
+        <div class="form-group">
+          <label for="pcb_id">PCB</label>
+          <select name="pcb_id" id="pcb_id" required>
+            {{range .PCBs}}
+            <option value="{{.ID}}"{{if eq .ID $.Entry.PCBID}} selected{{end}}>{{.Name}}{{if .Revision}} — {{.Revision}}{{end}}{{if .Designer}} ({{.Designer}}){{end}}</option>
+            {{end}}
+          </select>
+          <small class="form-hint">Changing this reassigns the firmware entry to a different PCB. Edit the fields below to update the selected PCB's details.</small>
+        </div>
+        <div class="form-group">
+          <label for="pcb_name">PCB Name <span class="required">*</span></label>
+          <input type="text" name="pcb_name" id="pcb_name" required value="{{.CurrentPCB.Name}}">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pcb_revision">Revision</label>
+            <input type="text" name="pcb_revision" id="pcb_revision" value="{{.CurrentPCB.Revision}}" placeholder="e.g. v2, rev3">
+          </div>
+          <div class="form-group">
+            <label for="pcb_designer">Designer</label>
+            <input type="text" name="pcb_designer" id="pcb_designer" value="{{.CurrentPCB.Designer}}" placeholder="e.g. Cannonkeys">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pcb_notes">PCB Notes</label>
+          <textarea name="pcb_notes" id="pcb_notes" rows="2">{{.CurrentPCB.Notes}}</textarea>
+        </div>
+      </section>
+
+      <script>
+        // Populated server-side so the JS can look up PCB details on dropdown change.
+        const pcbData = {{.PCBsJSON}};
+        document.getElementById('pcb_id').addEventListener('change', function() {
+          const pcb = pcbData.find(p => p.id == this.value);
+          if (!pcb) return;
+          document.getElementById('pcb_name').value     = pcb.name;
+          document.getElementById('pcb_revision').value  = pcb.revision;
+          document.getElementById('pcb_designer').value  = pcb.designer;
+          document.getElementById('pcb_notes').value     = pcb.notes;
+        });
+      </script>
+
+      <!-- Firmware Section -->
+      <section class="form-section">
+        <h2>Firmware Details</h2>
+        <div class="form-group">
+          <label for="firmware_name">Firmware Name <span class="required">*</span></label>
+          <input type="text" name="firmware_name" id="firmware_name" required value="{{.Entry.FirmwareName}}">
+        </div>
+        <div class="form-group">
+          <label for="source_url">Source URL</label>
+          <input type="url" name="source_url" id="source_url" value="{{.Entry.SourceURL}}" placeholder="https://github.com/…">
+        </div>
+        <div class="form-group">
+          <label for="firmware_notes">Notes</label>
+          <textarea name="firmware_notes" id="firmware_notes" rows="3">{{.Entry.Notes}}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="tags">Tags</label>
+          <input type="text" name="tags" id="tags" list="tag-list"
+            value="{{join .Entry.Tags ", "}}"
+            placeholder="qmk, vial, via (comma-separated)" autocomplete="off">
+          <datalist id="tag-list">
+            {{range .Tags}}
+            <option value="{{.}}">
+            {{end}}
+          </datalist>
+          <small class="form-hint">Comma-separated. e.g. <code>qmk, vial, via</code></small>
+        </div>
+      </section>
+
+    </form>
+
+    <!-- File delete forms are outside the edit form to avoid illegal nested forms -->
+    {{if .Entry.Files}}
+    <section class="form-section">
+      <h2>Existing Files</h2>
+      <div class="existing-files">
+        {{range .Entry.Files}}
+        <div class="existing-file-row">
+          <div class="existing-file-info">
+            <span class="file-tag-label">{{.FileTag}}</span>
+            <a href="/file/{{.ID}}" download="{{.Filename}}" class="file-dl-link">{{.Filename}}</a>
+            <span class="file-size muted">({{.SizeBytes}} bytes)</span>
+            <code class="file-hash-sm" title="SHA256: {{.SHA256}}">{{slice .SHA256 0 16}}…</code>
+          </div>
+          <form method="POST" action="/admin/file/{{.ID}}/delete{{if $.Token}}?token={{$.Token}}{{end}}" class="inline-form"
+                onsubmit="return confirm('Delete file {{.Filename}}?')">
+            <button type="submit" class="btn-sm btn-danger">Delete File</button>
+          </form>
+        </div>
+        {{end}}
+      </div>
+    </section>
+    {{end}}
+
+    <div class="form-actions">
+      <button type="submit" form="edit-form" class="btn-primary">Save Changes</button>
+      <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}" class="btn-secondary">Cancel</a>
+    </div>
+  </main>
+</body>
+</html>
