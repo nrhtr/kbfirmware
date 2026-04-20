@@ -17,9 +17,18 @@ type LoginHandler struct {
 	Tmpl        *template.Template
 	EmailConfig email.Config
 	SiteURL     string
+	StaticToken string
+	DevMode     bool
+	// SendEmail is called to deliver the magic link. Defaults to email.SendRaw;
+	// override in tests to avoid shelling out to sendmail.
+	SendEmail func(cfg email.Config, msg string) error
 }
 
 func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if h.DevMode && h.StaticToken != "" {
+		http.Redirect(w, r, "/admin/manage?token="+h.StaticToken, http.StatusSeeOther)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		h.showForm(w, r, "")
@@ -66,7 +75,11 @@ func (h *LoginHandler) sendLink(w http.ResponseWriter, r *http.Request) {
 		"Click this link to log in to kbfirmware admin (expires in 15 minutes):\n\n" +
 		link + "\n"
 
-	if err := email.SendRaw(h.EmailConfig, msg); err != nil {
+	send := h.SendEmail
+	if send == nil {
+		send = email.SendRaw
+	}
+	if err := send(h.EmailConfig, msg); err != nil {
 		log.Printf("login: send magic link: %v", err)
 		http.Error(w, "failed to send email", http.StatusInternalServerError)
 		return

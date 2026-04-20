@@ -40,6 +40,7 @@ func main() {
 	dbPath := getenv("DB_PATH", "kbfirmware.db")
 	listenAddr := getenv("LISTEN_ADDR", ":8080")
 	adminToken := os.Getenv("ADMIN_TOKEN")
+	devMode := os.Getenv("DEV_MODE") == "true"
 	analyticsSalt := os.Getenv("ANALYTICS_SALT")
 	if analyticsSalt == "" {
 		analyticsSalt = adminToken
@@ -145,6 +146,8 @@ func main() {
 		Tmpl:        tmpl,
 		EmailConfig: emailCfg,
 		SiteURL:     siteURL,
+		StaticToken: adminToken,
+		DevMode:     devMode,
 	}
 	r.Handle("/admin/login", loginHandler)
 	r.Get("/admin/verify", (&adminhandler.VerifyHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
