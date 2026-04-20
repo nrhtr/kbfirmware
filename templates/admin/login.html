@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Login — kbfirmware Admin</title>
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <span class="admin-title">kbfirmware Admin</span>
+    </div>
+  </header>
+
+  <main class="admin-main" style="max-width:28rem">
+    <h1>Admin Login</h1>
+
+    {{if .Sent}}
+    <p>Check your email for a login link. It expires in 15 minutes.</p>
+    {{else}}
+    {{if .Message}}<p class="error-msg">{{.Message}}</p>{{end}}
+    <p class="muted">A magic link will be sent to the configured admin email address.</p>
+    <form method="POST" action="/admin/login">
+      <button type="submit" class="btn-primary" style="margin-top:0.5rem">Send login link</button>
+    </form>
+    {{end}}
+  </main>
+</body>
+</html>

@@ -585,6 +585,48 @@ type AnalyticsEvent struct {
 	SearchQuery string
 }
 
+// CreateMagicLink stores a one-time login token expiring in 15 minutes.
+func (db *DB) CreateMagicLink(token string) error {
+	_, err := db.Exec(
+		`INSERT INTO admin_magic_link (token, expires_at) VALUES (?, unixepoch() + 900)`,
+		token,
+	)
+	return err
+}
+
+// VerifyMagicLink marks the token used and returns true if it was valid and unused.
+func (db *DB) VerifyMagicLink(token string) (bool, error) {
+	res, err := db.Exec(
+		`UPDATE admin_magic_link SET used=1
+		 WHERE token=? AND used=0 AND expires_at > unixepoch()`,
+		token,
+	)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
+}
+
+// CreateSession stores a session token expiring in 24 hours.
+func (db *DB) CreateSession(token string) error {
+	_, err := db.Exec(
+		`INSERT INTO admin_session (token, expires_at) VALUES (?, unixepoch() + 86400)`,
+		token,
+	)
+	return err
+}
+
+// VerifySession returns true if the token exists and has not expired.
+func (db *DB) VerifySession(token string) (bool, error) {
+	var n int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM admin_session WHERE token=? AND expires_at > unixepoch()`,
+		token,
+	).Scan(&n)
+	return n > 0, err
+}
+
 // RecordAnalyticsEvent inserts a visit or download event.
 func (db *DB) RecordAnalyticsEvent(e AnalyticsEvent) error {
 	_, err := db.Exec(

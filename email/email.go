@@ -65,6 +65,19 @@ func nextDigestTime(loc *time.Location) time.Time {
 	return target
 }
 
+// SendRaw sends a pre-composed email message via sendmail.
+func SendRaw(cfg Config, msg string) error {
+	if cfg.To == "" {
+		return fmt.Errorf("EMAIL_TO is not configured")
+	}
+	cmd := exec.Command(sendmailBin, cfg.To)
+	cmd.Stdin = strings.NewReader(msg)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("sendmail: %w (output: %s)", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
 // SendDigest composes and sends a plain-text digest email via sendmail.
 func SendDigest(cfg Config, flags []db.Flag) error {
 	if cfg.To == "" {

@@ -3,35 +3,42 @@ package admin
 import (
 	"net/http"
 	"strings"
+
+	"kbfirmware/db"
 )
 
-// AuthMiddleware returns middleware that checks for a valid admin token.
-// Accepts token via:
-//   - Authorization: Bearer <token> header
-//   - ?token=<token> query parameter (for browser bookmarks)
-func AuthMiddleware(adminToken string) func(http.Handler) http.Handler {
+// AuthMiddleware checks for a valid admin token.
+// Accepts token via Authorization: Bearer header or ?token= query param.
+// If staticToken is set, it works as a dev bypass (no DB lookup needed).
+// Otherwise, the token is validated against the admin_session table.
+// On failure, redirects to /admin/login.
+func AuthMiddleware(staticToken string, database *db.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := ""
 
-			// Check Authorization header first
 			authHeader := r.Header.Get("Authorization")
 			if strings.HasPrefix(authHeader, "Bearer ") {
 				token = strings.TrimPrefix(authHeader, "Bearer ")
 			}
-
-			// Fall back to query param
 			if token == "" {
 				token = r.URL.Query().Get("token")
 			}
 
-			if adminToken == "" || token != adminToken {
-				w.Header().Set("WWW-Authenticate", `Bearer realm="kbfirmware admin"`)
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
-				return
+			if token != "" {
+				// Static dev bypass
+				if staticToken != "" && token == staticToken {
+					next.ServeHTTP(w, r)
+					return
+				}
+				// DB session check
+				if ok, err := database.VerifySession(token); err == nil && ok {
+					next.ServeHTTP(w, r)
+					return
+				}
 			}
 
-			next.ServeHTTP(w, r)
+			http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 		})
 	}
 }

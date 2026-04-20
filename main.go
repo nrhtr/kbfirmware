@@ -40,6 +40,11 @@ func main() {
 	dbPath := getenv("DB_PATH", "kbfirmware.db")
 	listenAddr := getenv("LISTEN_ADDR", ":8080")
 	adminToken := os.Getenv("ADMIN_TOKEN")
+	analyticsSalt := os.Getenv("ANALYTICS_SALT")
+	if analyticsSalt == "" {
+		analyticsSalt = adminToken
+	}
+	siteURL := getenv("SITE_URL", "http://localhost:8080")
 
 	emailCfg := email.Config{
 		From: getenv("EMAIL_FROM", "kbfirmware@jenga.xyz"),
@@ -123,7 +128,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 
-	analytics := &handler.AnalyticsHandler{DB: database, Salt: adminToken}
+	analytics := &handler.AnalyticsHandler{DB: database, Salt: analyticsSalt}
 
 	// Public routes
 	r.Get("/", (&handler.IndexHandler{Tmpl: tmpl}).ServeHTTP)
@@ -134,9 +139,19 @@ func main() {
 	r.Post("/analytics/visit", analytics.RecordVisit)
 	r.Post("/analytics/download/{fileID}", analytics.RecordDownload)
 
+	// Admin login routes (outside auth middleware)
+	loginHandler := &adminhandler.LoginHandler{
+		DB:          database,
+		Tmpl:        tmpl,
+		EmailConfig: emailCfg,
+		SiteURL:     siteURL,
+	}
+	r.Handle("/admin/login", loginHandler)
+	r.Get("/admin/verify", (&adminhandler.VerifyHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
+
 	// Admin sub-router
 	r.Route("/admin", func(r chi.Router) {
-		r.Use(adminhandler.AuthMiddleware(adminToken))
+		r.Use(adminhandler.AuthMiddleware(adminToken, database))
 
 		r.Get("/", func(w http.ResponseWriter, req *http.Request) {
 			token := req.URL.Query().Get("token")
