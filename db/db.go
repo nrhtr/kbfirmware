@@ -573,3 +573,87 @@ func (db *DB) PendingFlagsCount() (int, error) {
 	err := db.QueryRow(`SELECT COUNT(*) FROM flag WHERE resolved=0`).Scan(&count)
 	return count, err
 }
+
+// RecordAnalyticsEvent inserts a visit or download event.
+// fileID should be nil for visit events.
+func (db *DB) RecordAnalyticsEvent(eventType string, fileID *int64, ipHash, country string) error {
+	_, err := db.Exec(
+		`INSERT INTO analytics_event (type, file_id, ip_hash, country) VALUES (?, ?, ?, ?)`,
+		eventType, fileID, ipHash, country,
+	)
+	return err
+}
+
+// DailyStat holds aggregated visit counts for one day.
+type DailyStat struct {
+	Date    string
+	Visits  int
+	Unique  int
+}
+
+// DownloadStat holds download counts for one firmware file.
+type DownloadStat struct {
+	FileID    int64
+	Filename  string
+	EntryName string
+	PCBName   string
+	Downloads int
+}
+
+// AnalyticsOverview returns summary stats for the admin analytics page.
+func (db *DB) AnalyticsOverview() (daily []DailyStat, downloads []DownloadStat, err error) {
+	rows, err := db.Query(`
+		SELECT
+			date(created_at, 'unixepoch') AS day,
+			COUNT(*) AS visits,
+			COUNT(DISTINCT ip_hash) AS unique_visitors
+		FROM analytics_event
+		WHERE type = 'visit'
+		  AND created_at >= unixepoch() - 30 * 86400
+		GROUP BY day
+		ORDER BY day DESC
+	`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("query daily stats: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var s DailyStat
+		if err := rows.Scan(&s.Date, &s.Visits, &s.Unique); err != nil {
+			return nil, nil, err
+		}
+		daily = append(daily, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	drows, err := db.Query(`
+		SELECT
+			ae.file_id,
+			ff.filename,
+			fe.firmware_name,
+			p.name,
+			COUNT(*) AS downloads
+		FROM analytics_event ae
+		JOIN firmware_file ff ON ff.id = ae.file_id
+		JOIN firmware_entry fe ON fe.id = ff.firmware_entry_id
+		JOIN pcb p ON p.id = fe.pcb_id
+		WHERE ae.type = 'download'
+		GROUP BY ae.file_id
+		ORDER BY downloads DESC
+		LIMIT 50
+	`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("query download stats: %w", err)
+	}
+	defer drows.Close()
+	for drows.Next() {
+		var s DownloadStat
+		if err := drows.Scan(&s.FileID, &s.Filename, &s.EntryName, &s.PCBName, &s.Downloads); err != nil {
+			return nil, nil, err
+		}
+		downloads = append(downloads, s)
+	}
+	return daily, downloads, drows.Err()
+}

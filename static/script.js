@@ -1,5 +1,8 @@
 // kbfirmware script.js
 
+// Analytics beacons — fire-and-forget, never block UX
+navigator.sendBeacon('/analytics/visit');
+
 // Theme — apply before paint to avoid flash
 const html = document.documentElement;
 const stored = localStorage.getItem('theme');
@@ -27,7 +30,7 @@ function renderEntry(e) {
   const tagsHtml = tags ? `<div class="tags">${tags}</div>` : '';
   const files = (e.files || []).map(f => `
     <div class="file-row">
-      <a class="file-link" href="/file/${f.id}/${f.sha256}" download="${esc(f.filename)}">
+      <a class="file-link" href="/file/${f.id}/${f.sha256}" download="${esc(f.filename)}" data-file-id="${f.id}">
         <span class="file-tag">${esc(f.file_tag)}</span><span class="file-sep"> / </span><span class="file-name">${esc(f.filename)}</span>
       </a>
       <button class="hash-btn" data-hash="${esc(f.sha256)}" title="Click to copy SHA256"
@@ -130,6 +133,14 @@ document.addEventListener('click', e => {
     btn.classList.add('hash-copied');
     setTimeout(() => { label.textContent = prev; btn.classList.remove('hash-copied'); }, 1500);
   });
+});
+
+// Download analytics
+document.addEventListener('click', e => {
+  const link = e.target.closest('.file-link');
+  if (!link) return;
+  const fileID = link.dataset.fileId;
+  if (fileID) navigator.sendBeacon(`/analytics/download/${fileID}`);
 });
 
 // Flag dialog

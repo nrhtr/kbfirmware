@@ -123,12 +123,16 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 
+	analytics := &handler.AnalyticsHandler{DB: database, Salt: adminToken}
+
 	// Public routes
 	r.Get("/", (&handler.IndexHandler{Tmpl: tmpl}).ServeHTTP)
 	r.Get("/api/entries.json", (&handler.EntriesJSONHandler{DB: database}).ServeHTTP)
 	r.Get("/file/{fileID}", (&handler.DownloadHandler{DB: database}).ServeHTTP)
 	r.Get("/file/{fileID}/{sha256}", (&handler.DownloadHandler{DB: database}).ServeHTTP)
 	r.Post("/flag/{entryID}", (&handler.FlagHandler{DB: database}).ServeHTTP)
+	r.Post("/analytics/visit", analytics.RecordVisit)
+	r.Post("/analytics/download/{fileID}", analytics.RecordDownload)
 
 	// Admin sub-router
 	r.Route("/admin", func(r chi.Router) {
@@ -150,6 +154,7 @@ func main() {
 		r.Post("/entry/{id}/edit", (&adminhandler.EditHandler{DB: database}).ServeHTTP)
 		r.Post("/entry/{id}/delete", (&adminhandler.DeleteEntryHandler{DB: database}).ServeHTTP)
 		r.Post("/file/{id}/delete", (&adminhandler.DeleteFileHandler{DB: database}).ServeHTTP)
+		r.Get("/analytics", (&adminhandler.AnalyticsHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
 		r.Get("/flags", (&adminhandler.FlagsHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
 		r.Get("/flags.json", (&adminhandler.FlagsJSONHandler{DB: database}).ServeHTTP)
 		r.Post("/flag/{id}/resolve", (&adminhandler.ResolveFlagHandler{DB: database}).ServeHTTP)

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Analytics — kbfirmware Admin</title>
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <span class="admin-title">kbfirmware Admin</span>
+      <nav class="admin-nav">
+        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}">Manage</a>
+        <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload</a>
+        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}">Flags</a>
+        <a href="/admin/analytics{{if .Token}}?token={{.Token}}{{end}}" class="active">Analytics</a>
+        <a href="/">← Public Site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <h1>Visits <span class="muted" style="font-size:0.9rem;font-weight:400">last 30 days</span></h1>
+
+    {{if .Daily}}
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Visits</th>
+            <th>Unique Visitors</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Daily}}
+          <tr>
+            <td>{{.Date}}</td>
+            <td>{{.Visits}}</td>
+            <td>{{.Unique}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="muted">No visit data yet.</p>
+    {{end}}
+
+    <h1 style="margin-top:2rem">Top Downloads</h1>
+
+    {{if .Downloads}}
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>PCB</th>
+            <th>Firmware</th>
+            <th>File</th>
+            <th>Downloads</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Downloads}}
+          <tr>
+            <td>{{.PCBName}}</td>
+            <td>{{.EntryName}}</td>
+            <td>{{.Filename}}</td>
+            <td>{{.Downloads}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="muted">No download data yet.</p>
+    {{end}}
+
+  </main>
+</body>
+</html>
