@@ -2,6 +2,7 @@ package handler
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,10 +18,24 @@ type AnalyticsHandler struct {
 	Salt string // secret used when hashing IPs
 }
 
+type visitPayload struct {
+	Path     string `json:"path"`
+	Referrer string `json:"referrer"`
+	Search   string `json:"search"`
+}
+
 func (h *AnalyticsHandler) RecordVisit(w http.ResponseWriter, r *http.Request) {
-	ipHash := hashIP(realIP(r), h.Salt)
-	country := r.Header.Get("CF-IPCountry")
-	if err := h.DB.RecordAnalyticsEvent("visit", nil, ipHash, country); err != nil {
+	var p visitPayload
+	json.NewDecoder(r.Body).Decode(&p) // best-effort; missing body is fine
+
+	if err := h.DB.RecordAnalyticsEvent(db.AnalyticsEvent{
+		Type:        "visit",
+		IPHash:      hashIP(realIP(r), h.Salt),
+		Country:     r.Header.Get("CF-IPCountry"),
+		Path:        p.Path,
+		Referrer:    p.Referrer,
+		SearchQuery: p.Search,
+	}); err != nil {
 		log.Printf("analytics: record visit: %v", err)
 	}
 	w.Header().Set("Cache-Control", "no-store")
@@ -33,9 +48,12 @@ func (h *AnalyticsHandler) RecordDownload(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	ipHash := hashIP(realIP(r), h.Salt)
-	country := r.Header.Get("CF-IPCountry")
-	if err := h.DB.RecordAnalyticsEvent("download", &fileID, ipHash, country); err != nil {
+	if err := h.DB.RecordAnalyticsEvent(db.AnalyticsEvent{
+		Type:    "download",
+		FileID:  &fileID,
+		IPHash:  hashIP(realIP(r), h.Salt),
+		Country: r.Header.Get("CF-IPCountry"),
+	}); err != nil {
 		log.Printf("analytics: record download file %d: %v", fileID, err)
 	}
 	w.Header().Set("Cache-Control", "no-store")

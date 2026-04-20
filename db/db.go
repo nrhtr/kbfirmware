@@ -574,12 +574,23 @@ func (db *DB) PendingFlagsCount() (int, error) {
 	return count, err
 }
 
+// AnalyticsEvent holds data for a single analytics event.
+type AnalyticsEvent struct {
+	Type        string // "visit" or "download"
+	FileID      *int64
+	IPHash      string
+	Country     string
+	Path        string
+	Referrer    string
+	SearchQuery string
+}
+
 // RecordAnalyticsEvent inserts a visit or download event.
-// fileID should be nil for visit events.
-func (db *DB) RecordAnalyticsEvent(eventType string, fileID *int64, ipHash, country string) error {
+func (db *DB) RecordAnalyticsEvent(e AnalyticsEvent) error {
 	_, err := db.Exec(
-		`INSERT INTO analytics_event (type, file_id, ip_hash, country) VALUES (?, ?, ?, ?)`,
-		eventType, fileID, ipHash, country,
+		`INSERT INTO analytics_event (type, file_id, ip_hash, country, path, referrer, search_query)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		e.Type, e.FileID, e.IPHash, e.Country, e.Path, e.Referrer, e.SearchQuery,
 	)
 	return err
 }
@@ -600,8 +611,20 @@ type DownloadStat struct {
 	Downloads int
 }
 
+// ReferrerStat holds visit counts for one referrer domain.
+type ReferrerStat struct {
+	Referrer string
+	Visits   int
+}
+
+// SearchStat holds visit counts for one search query on arrival.
+type SearchStat struct {
+	Query  string
+	Visits int
+}
+
 // AnalyticsOverview returns summary stats for the admin analytics page.
-func (db *DB) AnalyticsOverview() (daily []DailyStat, downloads []DownloadStat, err error) {
+func (db *DB) AnalyticsOverview() (daily []DailyStat, downloads []DownloadStat, referrers []ReferrerStat, searches []SearchStat, err error) {
 	rows, err := db.Query(`
 		SELECT
 			date(created_at, 'unixepoch') AS day,
@@ -614,18 +637,18 @@ func (db *DB) AnalyticsOverview() (daily []DailyStat, downloads []DownloadStat, 
 		ORDER BY day DESC
 	`)
 	if err != nil {
-		return nil, nil, fmt.Errorf("query daily stats: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("query daily stats: %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var s DailyStat
 		if err := rows.Scan(&s.Date, &s.Visits, &s.Unique); err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		daily = append(daily, s)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	drows, err := db.Query(`
@@ -645,15 +668,63 @@ func (db *DB) AnalyticsOverview() (daily []DailyStat, downloads []DownloadStat, 
 		LIMIT 50
 	`)
 	if err != nil {
-		return nil, nil, fmt.Errorf("query download stats: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("query download stats: %w", err)
 	}
 	defer drows.Close()
 	for drows.Next() {
 		var s DownloadStat
 		if err := drows.Scan(&s.FileID, &s.Filename, &s.EntryName, &s.PCBName, &s.Downloads); err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		downloads = append(downloads, s)
 	}
-	return daily, downloads, drows.Err()
+	if err := drows.Err(); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	rrows, err := db.Query(`
+		SELECT referrer, COUNT(*) AS visits
+		FROM analytics_event
+		WHERE type = 'visit' AND referrer != ''
+		  AND created_at >= unixepoch() - 30 * 86400
+		GROUP BY referrer
+		ORDER BY visits DESC
+		LIMIT 30
+	`)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("query referrer stats: %w", err)
+	}
+	defer rrows.Close()
+	for rrows.Next() {
+		var s ReferrerStat
+		if err := rrows.Scan(&s.Referrer, &s.Visits); err != nil {
+			return nil, nil, nil, nil, err
+		}
+		referrers = append(referrers, s)
+	}
+	if err := rrows.Err(); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	srows, err := db.Query(`
+		SELECT search_query, COUNT(*) AS visits
+		FROM analytics_event
+		WHERE type = 'visit' AND search_query != ''
+		  AND created_at >= unixepoch() - 30 * 86400
+		GROUP BY search_query
+		ORDER BY visits DESC
+		LIMIT 30
+	`)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("query search stats: %w", err)
+	}
+	defer srows.Close()
+	for srows.Next() {
+		var s SearchStat
+		if err := srows.Scan(&s.Query, &s.Visits); err != nil {
+			return nil, nil, nil, nil, err
+		}
+		searches = append(searches, s)
+	}
+	return daily, downloads, referrers, searches, srows.Err()
 }

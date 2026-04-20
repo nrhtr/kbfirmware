@@ -17,11 +17,13 @@ type AnalyticsHandler struct {
 type analyticsData struct {
 	Daily     []db.DailyStat
 	Downloads []db.DownloadStat
+	Referrers []db.ReferrerStat
+	Searches  []db.SearchStat
 	Token     string
 }
 
 func (h *AnalyticsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	daily, downloads, err := h.DB.AnalyticsOverview()
+	daily, downloads, referrers, searches, err := h.DB.AnalyticsOverview()
 	if err != nil {
 		log.Printf("analytics: AnalyticsOverview: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -31,6 +33,8 @@ func (h *AnalyticsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data := analyticsData{
 		Daily:     daily,
 		Downloads: downloads,
+		Referrers: referrers,
+		Searches:  searches,
 		Token:     r.URL.Query().Get("token"),
 	}
 

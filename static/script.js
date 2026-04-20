@@ -1,7 +1,11 @@
 // kbfirmware script.js
 
 // Analytics beacons — fire-and-forget, never block UX
-navigator.sendBeacon('/analytics/visit');
+navigator.sendBeacon('/analytics/visit', new Blob([JSON.stringify({
+  path: location.pathname,
+  referrer: document.referrer ? new URL(document.referrer).hostname : '',
+  search: new URLSearchParams(location.search).get('q') || '',
+})], { type: 'application/json' }));
 
 // Theme — apply before paint to avoid flash
 const html = document.documentElement;

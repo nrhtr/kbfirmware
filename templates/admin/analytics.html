@@ -50,6 +50,42 @@
     <p class="muted">No visit data yet.</p>
     {{end}}
 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem">
+
+    <div>
+    <h1>Top Referrers <span class="muted" style="font-size:0.9rem;font-weight:400">last 30 days</span></h1>
+    {{if .Referrers}}
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead><tr><th>Referrer</th><th>Visits</th></tr></thead>
+        <tbody>
+          {{range .Referrers}}
+          <tr><td>{{.Referrer}}</td><td>{{.Visits}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}<p class="muted">No referrer data yet.</p>{{end}}
+    </div>
+
+    <div>
+    <h1>Arrival Search Queries <span class="muted" style="font-size:0.9rem;font-weight:400">last 30 days</span></h1>
+    {{if .Searches}}
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead><tr><th>Query</th><th>Visits</th></tr></thead>
+        <tbody>
+          {{range .Searches}}
+          <tr><td>{{.Query}}</td><td>{{.Visits}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}<p class="muted">No search query data yet.</p>{{end}}
+    </div>
+
+    </div>
+
     <h1 style="margin-top:2rem">Top Downloads</h1>
 
     {{if .Downloads}}
