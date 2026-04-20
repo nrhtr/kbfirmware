@@ -132,7 +132,7 @@ func (db *DB) AllEntries() ([]FirmwareEntry, error) {
 	}
 	defer rows.Close()
 
-	var entries []FirmwareEntry
+	entries := []FirmwareEntry{}
 	entryIndexByID := map[int64]int{}
 
 	for rows.Next() {

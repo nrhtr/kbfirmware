@@ -57,7 +57,10 @@ func StartDailyDigest(cfg Config, database *db.DB) {
 
 // nextDigestTime computes the next 6:30pm Melbourne time.
 func nextDigestTime(loc *time.Location) time.Time {
-	now := time.Now().In(loc)
+	return nextDigestTimeFrom(time.Now().In(loc), loc)
+}
+
+func nextDigestTimeFrom(now time.Time, loc *time.Location) time.Time {
 	target := time.Date(now.Year(), now.Month(), now.Day(), 18, 30, 0, 0, loc)
 	if !now.Before(target) {
 		target = target.Add(24 * time.Hour)
