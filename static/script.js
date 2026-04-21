@@ -16,8 +16,10 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
   const isDark = html.dataset.theme === 'dark' ||
     (!html.dataset.theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const next = isDark ? 'light' : 'dark';
+  document.documentElement.classList.add('no-transition');
   html.dataset.theme = next;
   localStorage.setItem('theme', next);
+  requestAnimationFrame(() => document.documentElement.classList.remove('no-transition'));
 });
 
 // Entry rendering
@@ -87,6 +89,7 @@ function applyFilter() {
     ? filtered.map(renderEntry).join('')
     : '';
   if (noResults) noResults.classList.toggle('hidden', filtered.length > 0 || !q);
+  document.getElementById('request-btn')?.classList.toggle('request-btn-pulse', filtered.length === 0 && q.length > 0);
   if (searchCount) {
     searchCount.textContent = q
       ? `${filtered.length} of ${allEntries.length} entries`

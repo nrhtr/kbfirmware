@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <title>Flags — kbfirmware Admin</title>
+  <title>Requests — kbfirmware Admin</title>
   <link rel="stylesheet" href="{{ asset "style.css" }}">
 </head>
 <body class="admin-page">
@@ -14,8 +14,8 @@
       <nav class="admin-nav">
         <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}">Manage</a>
         <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload</a>
-        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}" class="active">Flags</a>
-        <a href="/admin/requests{{if .Token}}?token={{.Token}}{{end}}">Requests</a>
+        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}">Flags</a>
+        <a href="/admin/requests{{if .Token}}?token={{.Token}}{{end}}" class="active">Requests</a>
         <a href="/admin/analytics{{if .Token}}?token={{.Token}}{{end}}">Analytics</a>
         <a href="/">← Public Site</a>
       </nav>
@@ -23,37 +23,37 @@
   </header>
 
   <main class="admin-main">
-    <h1>Open Flags <span class="badge">{{len .Flags}}</span></h1>
+    <h1>Open Requests <span class="badge">{{len .Requests}}</span></h1>
 
-    {{if .Flags}}
+    {{if .Requests}}
     <div class="table-wrapper">
-      <table class="admin-table flags-table">
+      <table class="admin-table">
         <thead>
           <tr>
             <th>ID</th>
             <th>PCB</th>
-            <th>Firmware</th>
-            <th>Reason</th>
-            <th>Reporter IP</th>
-            <th>Reported At</th>
+            <th>Firmware URL</th>
+            <th>Notes</th>
+            <th>Contact</th>
+            <th>Submitted</th>
             <th>Resolve</th>
           </tr>
         </thead>
         <tbody>
-          {{range .Flags}}
+          {{range .Requests}}
           <tr>
             <td class="td-id">#{{.ID}}</td>
-            <td>{{.PCBName}}</td>
+            <td><strong>{{.PCBName}}</strong></td>
             <td>
-              {{.FirmwareName}}
-              <a href="/admin/entry/{{.FirmwareEntryID}}/edit{{if $.Token}}?token={{$.Token}}{{end}}" class="entry-link" title="View/edit this firmware entry">↗</a>
+              {{if .FirmwareURL}}
+              <a href="{{.FirmwareURL}}" target="_blank" rel="noopener noreferrer" class="file-dl-link">{{.FirmwareURL}}</a>
+              {{else}}<span class="muted">—</span>{{end}}
             </td>
-            <td class="td-reason">{{if .Reason}}{{.Reason}}{{else}}<span class="muted">No reason given</span>{{end}}</td>
-            <td class="td-ip"><code>{{.ReporterIP}}</code></td>
+            <td class="td-reason">{{if .Notes}}{{.Notes}}{{else}}<span class="muted">—</span>{{end}}</td>
+            <td>{{if .Contact}}{{.Contact}}{{else}}<span class="muted">—</span>{{end}}</td>
             <td class="td-time"><time>{{.CreatedAt}}</time></td>
-            <td class="td-resolve">
-              <form method="POST" action="/admin/flag/{{.ID}}/resolve{{if $.Token}}?token={{$.Token}}{{end}}" class="resolve-form">
-                <textarea name="notes" rows="2" placeholder="Resolution notes (optional)…" class="resolve-notes"></textarea>
+            <td>
+              <form method="POST" action="/admin/request/{{.ID}}/resolve{{if $.Token}}?token={{$.Token}}{{end}}" class="inline-form">
                 <button type="submit" class="btn-sm btn-primary">Resolve</button>
               </form>
             </td>
@@ -64,7 +64,7 @@
     </div>
     {{else}}
     <div class="empty-state">
-      <p>No open flags. Everything looks good!</p>
+      <p>No open requests.</p>
     </div>
     {{end}}
   </main>

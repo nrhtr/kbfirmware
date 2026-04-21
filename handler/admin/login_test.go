@@ -76,11 +76,16 @@ func TestLoginHandler_POST_StoresMagicLinkInDB(t *testing.T) {
 		EmailConfig: email.Config{From: "f", To: "t"},
 		SiteURL:     "http://localhost",
 		SendEmail: func(_ email.Config, msg string) error {
-			// extract token from the verify URL in the message
-			for _, line := range strings.Split(msg, "\n") {
-				if idx := strings.Index(line, "token="); idx != -1 {
-					sentToken = strings.TrimSpace(line[idx+6:])
+			// extract token from the verify URL embedded in the HTML
+			const marker = "token="
+			if idx := strings.Index(msg, marker); idx != -1 {
+				rest := msg[idx+len(marker):]
+				// token ends at next quote, angle bracket, or whitespace
+				end := strings.IndexAny(rest, "\"<> \n")
+				if end == -1 {
+					end = len(rest)
 				}
+				sentToken = rest[:end]
 			}
 			return nil
 		},

@@ -134,9 +134,13 @@ func main() {
 	// Public routes
 	r.Get("/", (&handler.IndexHandler{Tmpl: tmpl}).ServeHTTP)
 	r.Get("/api/entries.json", (&handler.EntriesJSONHandler{DB: database}).ServeHTTP)
+	r.Get("/entry/{id}", (&handler.EntryHandler{DB: database, Tmpl: tmpl, SiteURL: siteURL}).ServeHTTP)
+	r.Get("/sitemap.xml", (&handler.SitemapHandler{DB: database, SiteURL: siteURL}).ServeHTTP)
 	r.Get("/file/{fileID}", (&handler.DownloadHandler{DB: database}).ServeHTTP)
 	r.Get("/file/{fileID}/{sha256}", (&handler.DownloadHandler{DB: database}).ServeHTTP)
 	r.Post("/flag/{entryID}", (&handler.FlagHandler{DB: database}).ServeHTTP)
+	r.Get("/request", (&handler.RequestHandler{DB: database, Tmpl: tmpl, Secret: adminToken, Salt: analyticsSalt}).ServeHTTP)
+	r.Post("/request", (&handler.RequestHandler{DB: database, Tmpl: tmpl, Secret: adminToken, Salt: analyticsSalt}).ServeHTTP)
 	r.Post("/analytics/visit", analytics.RecordVisit)
 	r.Post("/analytics/download/{fileID}", analytics.RecordDownload)
 
@@ -174,6 +178,8 @@ func main() {
 		r.Post("/file/{id}/delete", (&adminhandler.DeleteFileHandler{DB: database}).ServeHTTP)
 		r.Get("/analytics", (&adminhandler.AnalyticsHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
 		r.Get("/flags", (&adminhandler.FlagsHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
+		r.Get("/requests", (&adminhandler.RequestsHandler{DB: database, Tmpl: tmpl}).ServeHTTP)
+		r.Post("/request/{id}/resolve", (&adminhandler.ResolveRequestHandler{DB: database}).ServeHTTP)
 		r.Get("/flags.json", (&adminhandler.FlagsJSONHandler{DB: database}).ServeHTTP)
 		r.Post("/flag/{id}/resolve", (&adminhandler.ResolveFlagHandler{DB: database}).ServeHTTP)
 		r.Post("/send-digest", (&adminhandler.SendDigestHandler{DB: database, EmailConfig: emailCfg}).ServeHTTP)

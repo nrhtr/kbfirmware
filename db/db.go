@@ -627,6 +627,65 @@ func (db *DB) VerifySession(token string) (bool, error) {
 	return n > 0, err
 }
 
+// FirmwareRequest represents a user-submitted request for new firmware.
+type FirmwareRequest struct {
+	ID          int64
+	PCBName     string
+	FirmwareURL string
+	Notes       string
+	Contact     string
+	IPHash      string
+	CreatedAt   int64
+	Resolved    bool
+}
+
+// InsertFirmwareRequest stores a new firmware request.
+func (db *DB) InsertFirmwareRequest(pcbName, firmwareURL, notes, contact, ipHash string) error {
+	_, err := db.Exec(
+		`INSERT INTO firmware_request (pcb_name, firmware_url, notes, contact, ip_hash) VALUES (?, ?, ?, ?, ?)`,
+		pcbName, firmwareURL, notes, contact, ipHash,
+	)
+	return err
+}
+
+// OpenRequests returns all unresolved firmware requests.
+func (db *DB) OpenRequests() ([]FirmwareRequest, error) {
+	rows, err := db.Query(`
+		SELECT id, pcb_name, firmware_url, notes, contact, ip_hash, created_at
+		FROM firmware_request WHERE resolved=0 ORDER BY created_at ASC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("query requests: %w", err)
+	}
+	defer rows.Close()
+
+	var reqs []FirmwareRequest
+	for rows.Next() {
+		var req FirmwareRequest
+		if err := rows.Scan(&req.ID, &req.PCBName, &req.FirmwareURL, &req.Notes, &req.Contact, &req.IPHash, &req.CreatedAt); err != nil {
+			return nil, err
+		}
+		reqs = append(reqs, req)
+	}
+	return reqs, rows.Err()
+}
+
+// ResolveRequest marks a firmware request as resolved.
+func (db *DB) ResolveRequest(id int64) error {
+	_, err := db.Exec(`UPDATE firmware_request SET resolved=1 WHERE id=?`, id)
+	return err
+}
+
+// HasRecentRequest returns true if this IP submitted a request in the last 5 minutes.
+func (db *DB) HasRecentRequest(ipHash string) (bool, error) {
+	var count int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM firmware_request WHERE ip_hash=? AND created_at > (unixepoch() - 300)`,
+		ipHash,
+	).Scan(&count)
+	return count > 0, err
+}
+
 // RecordAnalyticsEvent inserts a visit or download event.
 func (db *DB) RecordAnalyticsEvent(e AnalyticsEvent) error {
 	_, err := db.Exec(

@@ -1,0 +1,32 @@
+{{define "entry-card"}}
+<article class="entry" data-id="{{.ID}}">
+  <div class="entry-header">
+    <div class="entry-title">
+      <span class="pcb-name">{{.PCBName}}{{if .PCBRevision}} <span class="pcb-revision">{{.PCBRevision}}</span>{{end}}</span>
+      <span class="firmware-name">{{.FirmwareName}}</span>
+    </div>
+    <button class="flag-btn" data-entry-id="{{.ID}}" title="Report an issue with this entry">&#9873; Report issue</button>
+  </div>
+  <div class="entry-meta">
+    {{if .PCBDesigner}}<span class="designer">by {{.PCBDesigner}}</span>{{end}}
+    {{if .Tags}}<div class="tags">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</div>{{end}}
+  </div>
+  {{if .Files}}
+  <div class="entry-files">
+    {{range .Files}}
+    <div class="file-row">
+      <a class="file-link" href="/file/{{.ID}}/{{.SHA256}}" download="{{.Filename}}" data-file-id="{{.ID}}">
+        <span class="file-tag">{{.FileTag}}</span><span class="file-sep"> / </span><span class="file-name">{{.Filename}}</span>
+      </a>
+      <button class="hash-btn" data-hash="{{.SHA256}}" title="Click to copy SHA256" aria-label="Copy SHA256 hash">
+        <span class="hash-label">SHA256</span>
+        <code class="hash-value">{{slice .SHA256 0 16}}…</code>
+      </button>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+  {{if .SourceURL}}<div class="entry-source">Source: <a href="{{.SourceURL}}" target="_blank" rel="noopener noreferrer">{{.SourceURL}}</a></div>{{end}}
+  {{if .Notes}}<div class="entry-notes">{{.Notes}}</div>{{end}}
+</article>
+{{end}}

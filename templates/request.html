@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Contribute Firmware — kbfirmware</title>
+  <link rel="icon" type="image/svg+xml" href="{{ asset "favicon.svg" }}">
+  <link rel="stylesheet" href="{{ asset "style.css" }}">
+  {{template "theme-init"}}
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <a href="/" style="text-decoration:none;color:inherit"><h1>kbfirmware</h1></a>
+        <span class="header-subtitle">Keyboard PCB Firmware Repository</span>
+      </div>
+      <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark theme">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content" style="max-width:600px">
+    {{if .Done}}
+    <div style="text-align:center;padding:3rem 1rem">
+      <p style="font-size:2rem;margin-bottom:0.5rem">✓</p>
+      <h2>Request submitted!</h2>
+      <p class="muted">Thanks — we'll look into adding this firmware. <a href="/">Back to search</a></p>
+    </div>
+    {{else}}
+    <h2 style="margin-bottom:0.25rem">Contribute firmware</h2>
+    <p class="muted" style="margin-bottom:1.5rem;font-size:0.9rem">Help grow the database — share a firmware you've found or use.</p>
+
+    <form method="POST" action="/request" class="upload-form">
+      <input type="hidden" name="_ts" value="{{.Timestamp}}">
+
+      <div class="form-section">
+        <div class="form-group">
+          <label for="pcb_name">PCB / board name <span class="required">*</span></label>
+          <input type="text" id="pcb_name" name="pcb_name" required placeholder="e.g. DZ60, Tofu65, KBD75…" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="firmware_url">Firmware URL <span class="muted" style="font-weight:400">(optional)</span></label>
+          <input type="url" id="firmware_url" name="firmware_url" placeholder="https://…">
+          <span class="form-hint">Link to the firmware file or repository if you have one.</span>
+        </div>
+        <div class="form-group">
+          <label for="notes">Notes <span class="muted" style="font-weight:400">(optional)</span></label>
+          <textarea id="notes" name="notes" rows="3" placeholder="Any extra context — firmware type, layout, known variants…"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="contact">Contact <span class="muted" style="font-weight:400">(optional)</span></label>
+          <input type="text" id="contact" name="contact" placeholder="Email, Discord username, Reddit handle…">
+          <span class="form-hint">Only used if we need clarification. Never displayed publicly.</span>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-success">Submit request</button>
+        <a href="/" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+    {{end}}
+  </main>
+
+  <footer class="site-footer">
+    <p>kbfirmware &mdash; keyboard PCB firmware repository</p>
+  </footer>
+
+  <script src="{{ asset "script.js" }}" defer></script>
+</body>
+</html>

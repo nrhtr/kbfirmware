@@ -70,10 +70,11 @@ func (h *LoginHandler) sendLink(w http.ResponseWriter, r *http.Request) {
 	msg := "From: " + h.EmailConfig.From + "\n" +
 		"To: " + h.EmailConfig.To + "\n" +
 		"Subject: kbfirmware admin login\n" +
-		"Content-Type: text/plain; charset=UTF-8\n" +
+		"MIME-Version: 1.0\n" +
+		"Content-Type: text/html; charset=UTF-8\n" +
 		"\n" +
-		"Click this link to log in to kbfirmware admin (expires in 15 minutes):\n\n" +
-		link + "\n"
+		"<p>Click the link below to log in to kbfirmware admin. It expires in 15 minutes.</p>\n" +
+		"<p><a href=\"" + link + "\">" + link + "</a></p>\n"
 
 	send := h.SendEmail
 	if send == nil {
