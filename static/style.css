@@ -1192,14 +1192,10 @@ dialog textarea:focus {
     display: none;
   }
 
-  .entry-header {
-    flex-direction: column;
-    gap: 0.5rem;
+  .search-count {
+    display: none;
   }
 
-  .flag-btn {
-    align-self: flex-end;
-  }
 
   .admin-header-inner {
     flex-direction: column;
