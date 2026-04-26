@@ -19,8 +19,9 @@ type ManageHandler struct {
 }
 
 type manageData struct {
-	Entries []db.FirmwareEntry
-	Token   string
+	Entries   []db.FirmwareEntry
+	Token     string
+	ActiveNav string
 }
 
 func (h *ManageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +33,9 @@ func (h *ManageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := manageData{
-		Entries: entries,
-		Token:   r.URL.Query().Get("token"),
+		Entries:   entries,
+		Token:     r.URL.Query().Get("token"),
+		ActiveNav: "manage",
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -56,6 +58,7 @@ type editFormData struct {
 	Tags       []string
 	Token      string
 	Error      string
+	ActiveNav  string
 }
 
 func (h *EditFormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

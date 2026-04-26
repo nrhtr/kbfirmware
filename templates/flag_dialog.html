@@ -1,0 +1,13 @@
+{{define "flag-dialog"}}
+<dialog id="flag-dialog" aria-labelledby="flag-dialog-title">
+  <div class="dialog-inner">
+    <h2 id="flag-dialog-title">Report an issue</h2>
+    <p class="dialog-desc">Describe the issue with this firmware entry (e.g. wrong file, incorrect information, malicious content).</p>
+    <textarea id="flag-reason" placeholder="Describe the issue…" rows="4"></textarea>
+    <div class="dialog-actions">
+      <button id="flag-cancel" class="btn-secondary">Cancel</button>
+      <button id="flag-submit" class="btn-danger">Submit Report</button>
+    </div>
+  </div>
+</dialog>
+{{end}}

@@ -22,10 +22,11 @@ type UploadFormHandler struct {
 }
 
 type uploadFormData struct {
-	PCBs       []db.PCB
-	Tags       []string
-	Token      string
-	Error      string
+	PCBs      []db.PCB
+	Tags      []string
+	Token     string
+	Error     string
+	ActiveNav string
 }
 
 func (h *UploadFormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -43,9 +44,10 @@ func (h *UploadFormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := uploadFormData{
-		PCBs:  pcbs,
-		Tags:  tags,
-		Token: r.URL.Query().Get("token"),
+		PCBs:      pcbs,
+		Tags:      tags,
+		Token:     r.URL.Query().Get("token"),
+		ActiveNav: "upload",
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -181,10 +183,11 @@ func (h *UploadHandler) renderError(w http.ResponseWriter, r *http.Request, errM
 	pcbs, _ := h.DB.AllPCBs()
 	tags, _ := h.DB.AllTags()
 	data := uploadFormData{
-		PCBs:  pcbs,
-		Tags:  tags,
-		Token: r.URL.Query().Get("token"),
-		Error: errMsg,
+		PCBs:      pcbs,
+		Tags:      tags,
+		Token:     r.URL.Query().Get("token"),
+		Error:     errMsg,
+		ActiveNav: "upload",
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusBadRequest)

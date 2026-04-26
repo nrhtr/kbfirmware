@@ -8,19 +8,7 @@
   <link rel="stylesheet" href="{{ asset "style.css" }}">
 </head>
 <body class="admin-page">
-  <header class="admin-header">
-    <div class="admin-header-inner">
-      <span class="admin-title">kbfirmware Admin</span>
-      <nav class="admin-nav">
-        <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}">Manage</a>
-        <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}">Upload</a>
-        <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}" class="active">Flags</a>
-        <a href="/admin/requests{{if .Token}}?token={{.Token}}{{end}}">Requests</a>
-        <a href="/admin/analytics{{if .Token}}?token={{.Token}}{{end}}">Analytics</a>
-        <a href="/">← Public Site</a>
-      </nav>
-    </div>
-  </header>
+  {{template "admin-header" .}}
 
   <main class="admin-main">
     <h1>Open Flags <span class="badge">{{len .Flags}}</span></h1>

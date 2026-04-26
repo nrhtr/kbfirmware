@@ -20,6 +20,7 @@ type analyticsData struct {
 	Referrers []db.ReferrerStat
 	Searches  []db.SearchStat
 	Token     string
+	ActiveNav string
 }
 
 func (h *AnalyticsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +37,7 @@ func (h *AnalyticsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Referrers: referrers,
 		Searches:  searches,
 		Token:     r.URL.Query().Get("token"),
+		ActiveNav: "analytics",
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

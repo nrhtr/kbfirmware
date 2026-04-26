@@ -20,8 +20,9 @@ type FlagsHandler struct {
 }
 
 type flagsData struct {
-	Flags []db.Flag
-	Token string
+	Flags     []db.Flag
+	Token     string
+	ActiveNav string
 }
 
 func (h *FlagsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +34,9 @@ func (h *FlagsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := flagsData{
-		Flags: flags,
-		Token: r.URL.Query().Get("token"),
+		Flags:     flags,
+		Token:     r.URL.Query().Get("token"),
+		ActiveNav: "flags",
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

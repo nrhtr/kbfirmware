@@ -17,8 +17,9 @@ type RequestsHandler struct {
 }
 
 type requestsData struct {
-	Requests []db.FirmwareRequest
-	Token    string
+	Requests  []db.FirmwareRequest
+	Token     string
+	ActiveNav string
 }
 
 func (h *RequestsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +32,9 @@ func (h *RequestsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := h.Tmpl.ExecuteTemplate(w, "requests.html", requestsData{
-		Requests: reqs,
-		Token:    r.URL.Query().Get("token"),
+		Requests:  reqs,
+		Token:     r.URL.Query().Get("token"),
+		ActiveNav: "requests",
 	}); err != nil {
 		log.Printf("requests: template: %v", err)
 	}

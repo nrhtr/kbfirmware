@@ -1,0 +1,15 @@
+{{define "admin-header"}}
+<header class="admin-header">
+  <div class="admin-header-inner">
+    <span class="admin-title">kbfirmware Admin</span>
+    <nav class="admin-nav">
+      <a href="/admin/manage{{if .Token}}?token={{.Token}}{{end}}"{{if eq .ActiveNav "manage"}} class="active"{{end}}>Manage</a>
+      <a href="/admin/upload{{if .Token}}?token={{.Token}}{{end}}"{{if eq .ActiveNav "upload"}} class="active"{{end}}>Upload</a>
+      <a href="/admin/flags{{if .Token}}?token={{.Token}}{{end}}"{{if eq .ActiveNav "flags"}} class="active"{{end}}>Flags</a>
+      <a href="/admin/requests{{if .Token}}?token={{.Token}}{{end}}"{{if eq .ActiveNav "requests"}} class="active"{{end}}>Requests</a>
+      <a href="/admin/analytics{{if .Token}}?token={{.Token}}{{end}}"{{if eq .ActiveNav "analytics"}} class="active"{{end}}>Analytics</a>
+      <a href="/">← Public Site</a>
+    </nav>
+  </div>
+</header>
+{{end}}
