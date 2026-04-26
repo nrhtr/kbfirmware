@@ -14,8 +14,9 @@ import (
 
 // AnalyticsHandler handles beacon POSTs for visit and download events.
 type AnalyticsHandler struct {
-	DB   *db.DB
-	Salt string // secret used when hashing IPs
+	DB        *db.DB
+	Salt      string   // secret used when hashing IPs
+	SelfHosts []string // own hostnames excluded from referrer tracking (e.g. redirect aliases)
 }
 
 type visitPayload struct {
@@ -27,6 +28,13 @@ type visitPayload struct {
 func (h *AnalyticsHandler) RecordVisit(w http.ResponseWriter, r *http.Request) {
 	var p visitPayload
 	json.NewDecoder(r.Body).Decode(&p) // best-effort; missing body is fine
+
+	for _, self := range h.SelfHosts {
+		if p.Referrer == self {
+			p.Referrer = ""
+			break
+		}
+	}
 
 	if err := h.DB.RecordAnalyticsEvent(db.AnalyticsEvent{
 		Type:        "visit",

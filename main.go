@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	_ "time/tzdata" // embed IANA timezone DB so Docker image needs no tzdata package
@@ -46,6 +47,10 @@ func main() {
 		analyticsSalt = adminToken
 	}
 	siteURL := getenv("SITE_URL", "http://localhost:8080")
+
+	// Build the list of own hostnames to exclude from referrer analytics.
+	// Always includes the canonical SITE_URL host; SITE_URL_ALIASES adds redirect aliases.
+	selfHosts := parseSelfHosts(siteURL, os.Getenv("SITE_URL_ALIASES"))
 
 	emailCfg := email.Config{
 		From: getenv("EMAIL_FROM", "kbfirmware@jenga.xyz"),
@@ -129,7 +134,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 
-	analytics := &handler.AnalyticsHandler{DB: database, Salt: analyticsSalt}
+	analytics := &handler.AnalyticsHandler{DB: database, Salt: analyticsSalt, SelfHosts: selfHosts}
 
 	// Public routes
 	r.Get("/", (&handler.IndexHandler{Tmpl: tmpl}).ServeHTTP)
@@ -197,6 +202,35 @@ func main() {
 	if err := http.ListenAndServe(listenAddr, r); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// parseSelfHosts returns a deduplicated list of hostnames that should be
+// excluded from referrer analytics (own domains + redirect aliases).
+func parseSelfHosts(siteURL, aliases string) []string {
+	seen := map[string]bool{}
+	var hosts []string
+	add := func(raw string) {
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
+			return
+		}
+		// Accept bare hostname or full URL
+		if !strings.Contains(raw, "://") {
+			raw = "https://" + raw
+		}
+		if u, err := url.Parse(raw); err == nil && u.Hostname() != "" {
+			h := u.Hostname()
+			if !seen[h] {
+				seen[h] = true
+				hosts = append(hosts, h)
+			}
+		}
+	}
+	add(siteURL)
+	for _, a := range strings.Split(aliases, ",") {
+		add(a)
+	}
+	return hosts
 }
 
 func getenv(key, def string) string {
